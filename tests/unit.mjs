@@ -22,7 +22,43 @@ const BIG = 'C:/Users/34021/.dsh/repair-backup-20260828/session-e8388f2b-79de-41
 const BIG_ID = 'session-e8388f2b-79de-4169-80e6-92c235a7f036';
 let haveBig = existsSync(BIG);
 
-console.log('== BIG multi-frame file (38MB, e8388f2b backup) ==');
+
+// —— 合成多帧 fixture（官方帧格式：header 帧 + body 帧，均带 checksum）——
+import { promisify } from 'node:util';
+import { constants, zstdCompress } from 'node:zlib';
+const zstdCompressAsync = promisify(zstdCompress);
+const BS2 = String.fromCharCode(92);
+const CWD_A = 'D:' + BS2 + '文件存放处' + BS2 + 'code';
+const CWD_B = 'D:' + BS2 + '文件存放处' + BS2 + 'code' + BS2 + 'dsh desktop版 以及dsh插件制作';
+const SYNTH_ID = 'session-synth-0000-0000-0000-000000000001';
+
+async function makeSynthFixture() {
+  const dir = join(work, 'root', projectKey(CWD_A), SYNTH_ID);
+  mkdirSync(dir, { recursive: true });
+  const headerLine = JSON.stringify({ type: 'session', version: 0, id: SYNTH_ID, createdAt: 1786788999000, cwd: CWD_A, delegationDepth: 0, agentPreset: 'code' }) + String.fromCharCode(10);
+  const events = [];
+  for (let i = 0; i < 5000; i++) events.push(JSON.stringify({ type: 'user/message', seq: i, data: { content: 'line-' + i } }));
+  const body = events.join(String.fromCharCode(10)) + String.fromCharCode(10);
+  const headerFrame = await zstdCompressAsync(Buffer.from(headerLine, 'utf8'), { params: { [constants.ZSTD_c_checksumFlag]: 1 } });
+  const bodyFrame = await zstdCompressAsync(Buffer.from(body, 'utf8'), { params: { [constants.ZSTD_c_checksumFlag]: 1 } });
+  const file = join(dir, 'session.jsonl.zstd');
+  writeFileSync(file, Buffer.concat([headerFrame, bodyFrame]));
+  return { file, dir, lines: 5001 };
+}
+
+console.log('== synthetic multi-frame fixture (version-independent) ==');
+const synthFixture = await makeSynthFixture();
+const synthOld = readFileSync(synthFixture.file);
+const { buf: synthBuf } = await rewriteHeaderFile(synthFixture.file, CWD_B);
+const synthTmp = join(work, 'synth-rewritten.jsonl.zstd');
+writeFileSync(synthTmp, synthBuf);
+await verifyRewritten(synthTmp, SYNTH_ID, CWD_B, synthOld);
+console.log('  PASS  synth fixture: header rewritten + body frames byte-identical');
+console.log('  PASS  synth fixture lines preserved (readFullZstd)');
+const synthFull = await readFullZstd(synthTmp);
+assert(synthFull.toString('utf8').split(String.fromCharCode(10)).length - 1 === 5001, 'synth body 5000 events (5001 newlines)');
+
+console.log('== BIG real fixture (optional, if backup exists) ==');
 if (haveBig) {
   const srcDir = join(work, 'root', projectKey(FL), BIG_ID);
   mkdirSync(srcDir, { recursive: true });
@@ -59,6 +95,28 @@ if (existsSync(REAL)) {
   await rollbackFiles({ root: join(work, 'root'), id: ID, srcCwd: FL, newFile: moved.newFile });
   const rb = await readHeaderSync(join(srcDir2, 'session.jsonl.zstd'));
   assert(rb.cwd === FL && rb.id === ID, 'rolled back');
+}
+
+
+console.log('== no-overwrite gate ==');
+{
+  const dir = join(work, 'root', projectKey(FL), ID);
+  mkdirSync(dir, { recursive: true });
+  copyFileSync(REAL, join(dir, 'session.jsonl.zstd'));
+  const movedOK = await migrateFiles({ root: join(work, 'root'), backupRoot: join(work, 'backup'), id: ID, srcCwd: FL, targetCwd: CODE });
+  // 第二次迁移到同一目标：应拒绝（no-overwrite）
+  let rejected = false;
+  try {
+    await migrateFiles({ root: join(work, 'root'), backupRoot: join(work, 'backup'), id: ID, srcCwd: FL, targetCwd: CODE });
+  } catch { rejected = true; }
+  assert(rejected, 'migrate to same target rejected (no-overwrite)');
+  // 回滚到已存在位置应拒绝：先制造目标已存在
+  const rollTarget = join(work, 'root', projectKey(FL), ID, 'session.jsonl.zstd');
+  mkdirSync(dirname(rollTarget), { recursive: true });
+  copyFileSync(REAL, rollTarget);
+  let rollRejected = false;
+  try { await rollbackFiles({ root: join(work, 'root'), id: ID, srcCwd: FL, newFile: movedOK.newFile }); } catch { rollRejected = true; }
+  assert(rollRejected, 'rollback onto existing rejected (no-overwrite)');
 }
 
 rmSync(work, { recursive: true, force: true });

@@ -1,5 +1,11 @@
 # dsh-session-migrate
 
+> ⚠️ **EXPERIMENTAL**：本插件依赖上游内部方法（`workspaceRegistry.indexHeader`，位于
+> `@deepseek-ai/dsh-workspace` v0.1.1-rc.2，非公开契约）。官方迁移 API 出现前，请仅用于
+> **可备份恢复的会话**；迁移自动整目录备份（含 session-owned companion 文件与 manifest）
+> 且目标 no-overwrite。迁移前请确认会话空闲（非运行中）。
+
+
 > DSH (DeepSeek Harness) 会话迁移插件：Web UI 设置面板中把会话**拖拽**到目标工作区完成迁移，
 > 自动备份、自动回滚、官方 workspaceRegistry 同步。零运行时依赖。
 
