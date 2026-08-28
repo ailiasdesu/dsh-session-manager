@@ -1,0 +1,56 @@
+{
+  "name": "@dsh-external/dsh-session-migrate",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DSH session migration plugin: drag-and-drop sessions between workspaces in the Web UI. Backed by the official workspaceRegistry service and a multi-frame-safe zstd header rewrite.",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "files": [
+    "lib",
+    "src",
+    "cordis.patch.yml",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22.19"
+  },
+  "license": "BSD-3-Clause",
+  "types": "./lib/types/index.d.ts",
+  "peerDependencies": {
+    "@deepseek-ai/dsh-client-runtime": "*",
+    "@deepseek-ai/dsh-host-webserver": "*",
+    "@deepseek-ai/cordis": "*",
+    "@deepseek-ai/dsh-client-ui-slots": "*",
+    "@deepseek-ai/dsh-client-ui-settings": "*",
+    "@deepseek-ai/dsh-client-locale": "*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "scripts": {
+    "build": "node --check lib/index.js && node --check lib/client.js && node --check lib/migrate.js",
+    "prepack": "npm run build",
+    "check": "node tests/unit.mjs"
+  }
+}
