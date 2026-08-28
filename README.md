@@ -1,4 +1,4 @@
-# dsh-session-migrate
+# dsh-session-manager
 
 > ⚠️ **EXPERIMENTAL**：本插件依赖上游内部方法（`workspaceRegistry.indexHeader`，位于
 > `@deepseek-ai/dsh-workspace` v0.1.1-rc.2，非公开契约）。官方迁移 API 出现前，请仅用于
@@ -15,11 +15,11 @@ Topics: `dsh-plugin`, `deepseek-harness`, `dsh`
 
 ```bash
 # 方式一：官方标准命令（推荐，从 GitHub 安装）
-dsh plugin --profile web add github:ailiasdesu/dsh-session-migrate#main
+dsh plugin --profile web add github:ailiasdesu/dsh-session-manager#main
 
 # 方式二：本地开发源码路径
 cd ~/.dsh/profiles/web
-pnpm add file:../../dsh-session-migrate
+pnpm add file:../../dsh-session-manager
 ```
 
 安装后确认 `profile/package.json` 的 `dsh.profile.bundles` 已包含本包（插件自带

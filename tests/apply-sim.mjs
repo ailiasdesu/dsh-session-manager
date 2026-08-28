@@ -1,6 +1,6 @@
 
 // 独立 node 进程：mock cordis ctx，调用插件 apply，检查注册行为
-const mod = await import('file:///C:/Users/34021/.dsh/dsh-session-migrate/lib/index.js');
+const mod = await import('file:///C:/Users/34021/.dsh/dsh-session-manager/lib/index.js');
 console.log('module loaded. name =', mod.name, 'inject =', JSON.stringify(mod.inject));
 const registered = [];
 const ctx = {

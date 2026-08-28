@@ -3,7 +3,7 @@
  * 本文件满足 bundle 规范 shape；如需 TS 源码版，请同步维护 lib 与 src。
  * 新增插件请勿直接复制本注释（它只存在于本仓库）。
  */
-export const name = '@dsh-external/dsh-session-migrate';
+export const name = '@dsh-external/dsh-session-manager';
 export const inject = ['webServer', 'workspaceRegistry', 'sessionPersistence', 'sessions'];
 
 /** 运行时入口在 lib/index.js（apply 实现）。node:zlib/fs 原生依赖，无 npm 依赖。 */
